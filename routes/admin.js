@@ -2,15 +2,13 @@ const express = require('express');
 const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
 const PaymentSettings = require('../models/PaymentSettings');
+const Admin = require('../models/Admin');
+const isAdmin = require('../middleware/adminAuth');
 
 const router = express.Router();
 
-// Middleware to verify admin access
-const isAdmin = (req, res, next) => {
-    // Since we don't have a full authentication system,
-    // we'll assume all requests to admin routes are authorized
-    next();
-};
+// All routes in this file require admin authentication
+router.use(isAdmin);
 
 // --- Admin Routes ---
 

@@ -1,4 +1,3 @@
-console.log('\n\n==== SERVER STARTING ====');
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -7,18 +6,43 @@ const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
 
 const adminRoutes = require('./routes/admin');
+const adminAuthRoutes = require('./routes/admin-auth');
 const userRoutes = require('./routes/user');
 const cartRoutes = require('./routes/cart');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-console.log('Starting application...');
-console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'Is defined' : 'Is not defined'}`);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB connected successfully.'))
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/coursestore')
+    .then(async () => {
+        console.log('MongoDB connected successfully.');
+
+        // Initialize Admin model after successful database connection
+        try {
+            const Admin = require('./models/Admin');
+
+            // Check if admin exists
+            const adminCount = await Admin.countDocuments();
+
+            // Create default admin if needed
+            if (adminCount === 0) {
+                const defaultAdmin = new Admin({
+                    username: 'admin',
+                    password: 'admin123'
+                });
+                await defaultAdmin.save();
+            }
+        } catch (error) {
+            console.error('Error initializing admin:', error);
+        }
+
+        // Start Server
+        app.listen(PORT, () => {
+            console.log(`Server running on http://localhost:${PORT}`);
+        });
+    })
     .catch(err => {
         console.error('MongoDB connection error:', err);
         process.exit(1); // Exit if cannot connect to DB
@@ -50,12 +74,12 @@ app.use(async (req, res, next) => {
         const Cart = require('./models/Cart');
         // Find or create cart for this session
         let cart = await Cart.findOne({ sessionId: req.session.sessionId }).populate('items.course');
-        
+
         if (!cart) {
             cart = new Cart({ sessionId: req.session.sessionId, items: [] });
             await cart.save();
         }
-        
+
         // Add cart to res.locals so it's available in all templates
         res.locals.cart = cart;
         res.locals.cartItemCount = cart.items.length;
@@ -83,7 +107,12 @@ app.use(async (req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Static files
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Routes
+// Admin auth routes first, then admin routes
+app.use('/admin', adminAuthRoutes);
 app.use('/admin', adminRoutes);
 app.use('/cart', cartRoutes);
 app.use('/', userRoutes);
@@ -92,9 +121,4 @@ app.use('/', userRoutes);
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something broke!');
-});
-
-// Start Server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
 }); 
