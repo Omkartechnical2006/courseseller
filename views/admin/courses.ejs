@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Courses</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --info-color: #36b9cc;
+            --dark-color: #2a313b;
+            --light-color: #f8f9fc;
+            --card-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            --border-radius: 0.5rem;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(to bottom, var(--primary-color), #224abe);
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: width 0.3s ease;
+            width: 230px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+            padding-top: 1rem;
+        }
+        
+        .sidebar-header {
+            height: 4.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-brand {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+        }
+        
+        .sidebar-divider {
+            margin: 1rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .nav-item {
+            padding: 0 1rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-icon {
+            margin-right: 0.8rem;
+            font-size: 1rem;
+        }
+        
+        .main-content {
+            margin-left: 230px;
+            padding: 1.5rem;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .topbar {
+            height: 4.375rem;
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .topbar-title {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--dark-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: none;
+        }
+        
+        .dashboard-card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1.5rem;
+            background-color: white;
+            height: 100%;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.3rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        .course-image {
+            height: 180px;
+            object-fit: cover;
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
+        }
+        
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-icon i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 250px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .toggle-sidebar {
+                display: block;
+            }
+            
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.3);
+                z-index: 999;
+                display: none;
+            }
+            
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/admin-navbar') %>
+
+    <div class="container mt-4">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin" class="sidebar-brand">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Admin
+                </a>
+            </div>
+            
+            <hr class="sidebar-divider">
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin">
+                        <i class="bi bi-house-door nav-icon"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/admin/courses">
+                        <i class="bi bi-book nav-icon"></i>
+                        Courses
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/upload">
+                        <i class="bi bi-cloud-upload nav-icon"></i>
+                        Upload Course
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/purchases">
+                        <i class="bi bi-cart-check nav-icon"></i>
+                        Purchases
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/payment-settings">
+                        <i class="bi bi-credit-card nav-icon"></i>
+                        Payment Settings
+                    </a>
+                </li>
+                
+                <hr class="sidebar-divider">
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="bi bi-globe nav-icon"></i>
+                        View Website
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- Sidebar backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <div class="topbar mb-4">
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="topbar-title">Course Management</h1>
+                <div>
+                    <a href="/admin/upload" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Add New Course
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <% if (courses && courses.length > 0) { %>
+                    <% courses.forEach(course => { %>
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="dashboard-card">
+                                <img src="<%= course.imageUrl %>" class="course-image w-100" alt="Course Image">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="fw-bold mb-0 text-primary">₹<%= course.price %></h5>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-calendar-date"></i> <%= course.createdAt.toLocaleDateString() %>
+                                        </span>
+                                    </div>
+                                    <% if(course.heading) { %>
+                                        <h6 class="mb-2 text-truncate"><%= course.heading %></h6>
+                                    <% } %>
+                                    <% if(course.description) { %>
+                                        <p class="card-text small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                            <%= course.description %>
+                                        </p>
+                                    <% } %>
+                                    <div class="d-flex justify-content-between mt-auto">
+                                        <a href="/admin/courses/<%= course._id %>/edit" class="btn btn-sm btn-primary btn-icon">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        <form action="/admin/courses/<%= course._id %>/delete" method="POST">
+                                            <button type="submit" class="btn btn-sm btn-danger btn-icon" onclick="return confirm('Are you sure you want to delete this course?')">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-12">
+                        <div class="dashboard-card">
+                            <div class="card-body text-center py-5">
+                                <i class="bi bi-journal-x fs-1 text-muted mb-3"></i>
+                                <h5>No courses available</h5>
+                                <p class="text-muted">You haven't uploaded any courses yet.</p>
+                                <a href="/admin/upload" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i> Upload Your First Course
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            const toggleSidebar = document.getElementById('toggleSidebar');
+            
+            // Toggle sidebar on button click
+            toggleSidebar.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                sidebarBackdrop.classList.toggle('show');
+            });
+            
+            // Close sidebar when clicking on backdrop
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarBackdrop.classList.remove('show');
+            });
+            
+            // Close sidebar on window resize if in mobile view
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992) {
+                    sidebar.classList.remove('show');
+                    sidebarBackdrop.classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
