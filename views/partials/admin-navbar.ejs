@@ -3,7 +3,7 @@
     <button class="toggle-sidebar" id="toggleSidebar">
         <i class="bi bi-list"></i>
     </button>
-    <h1 class="topbar-title">Admin Dashboard</h1>
+    <h1 class="topbar-title"><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Admin Dashboard' %></h1>
     <div>
         <a href="/admin/credentials" class="btn btn-sm btn-outline-primary me-2">
             <i class="bi bi-person-badge"></i> Manage Account
