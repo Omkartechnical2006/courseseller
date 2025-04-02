@@ -292,9 +292,9 @@
                                         <h6 class="mb-2 text-truncate"><%= course.heading %></h6>
                                     <% } %>
                                     <% if(course.description) { %>
-                                        <p class="card-text small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                            <%= course.description %>
-                                        </p>
+                                        <div class="card-text small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                            <%- course.description %>
+                                        </div>
                                     <% } %>
                                     <div class="d-flex justify-content-between mt-auto">
                                         <a href="/admin/courses/<%= course._id %>/edit" class="btn btn-sm btn-primary btn-icon">

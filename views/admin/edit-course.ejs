@@ -6,6 +6,7 @@
     <title>Edit Course</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/rich-text-editor.css">
     <style>
         :root {
             --primary-color: #4e73df;
@@ -295,7 +296,9 @@
                                     Created: <%= course.createdAt.toLocaleDateString() %>
                                 </div>
                                 <% if(course.description) { %>
-                                    <p class="text-muted"><%= course.description %></p>
+                                    <div class="text-muted description-container" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 10px; margin-bottom: 15px;">
+                                        <%- course.description %>
+                                    </div>
                                 <% } %>
                             </div>
                         </div>
@@ -316,7 +319,9 @@
                             
                             <div class="mb-3">
                                 <label for="description" class="form-label fw-medium">Course Description</label>
-                                <textarea class="form-control shadow-sm" id="description" name="description" rows="4" required><%= course.description || '' %></textarea>
+                                <div id="rich-text-container" class="rich-text-container">
+                                    <textarea id="description" name="description" style="display: none;"><%= course.description || '' %></textarea>
+                                </div>
                             </div>
                             
                             <div class="mb-3">
@@ -352,20 +357,22 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/rich-text-editor.js"></script>
     <script>
-        // Sidebar toggle functionality
+        // Initialize rich text editor
         document.addEventListener('DOMContentLoaded', function() {
+            const editor = new RichTextEditor('rich-text-container', 'description');
+            
+            // Sidebar toggle functionality
             const sidebar = document.getElementById('sidebar');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-            const toggleSidebar = document.getElementById('toggleSidebar');
+            const toggleSidebarBtn = document.getElementById('toggleSidebar');
             
-            // Toggle sidebar on button click
-            toggleSidebar.addEventListener('click', function() {
+            toggleSidebarBtn.addEventListener('click', function() {
                 sidebar.classList.toggle('show');
                 sidebarBackdrop.classList.toggle('show');
             });
             
-            // Close sidebar when clicking on backdrop
             sidebarBackdrop.addEventListener('click', function() {
                 sidebar.classList.remove('show');
                 sidebarBackdrop.classList.remove('show');
@@ -378,7 +385,6 @@
                     sidebarBackdrop.classList.remove('show');
                 }
             });
-
         });
     </script>
 </body>

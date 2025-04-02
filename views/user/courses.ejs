@@ -150,7 +150,7 @@
             <% if (courses && courses.length > 0) { %>
                 <% courses.forEach(course => { %>
                     <div class="col">
-                        <div class="card course-card shadow-sm" onclick="window.location.href='/purchase/<%= course._id %>'">
+                        <div class="card course-card shadow-sm" onclick="handleCardClick(event, '<%= course._id %>')">
                             <button type="button" class="cart-icon border-0" 
                                 onclick="event.stopPropagation(); addToCart('<%= course._id %>', '<%= course.heading ? course.heading : 'Course' %>');">
                                 <i class="bi bi-cart-plus"></i>
@@ -165,7 +165,7 @@
                                     <% } %>
                                     
                                     <% if (course.description) { %>
-                                        <p class="card-text"><%= course.description %></p>
+                                        <div class="card-text"><%- course.description %></div>
                                     <% } else { %>
                                         <p class="card-text">No description available.</p>
                                     <% } %>
@@ -317,6 +317,15 @@
                     toast.remove();
                 }, 300);
             }, 5000);
+        }
+
+        function handleCardClick(event, courseId) {
+            // If the click originated from a link or button, don't navigate
+            if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON' || 
+                event.target.closest('a') || event.target.closest('button')) {
+                return;
+            }
+            window.location.href = '/purchase/' + courseId;
         }
     </script>
 </body>
