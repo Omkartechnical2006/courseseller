@@ -10,3 +10,4 @@ Make sure to set the following environment variables before running the applicat
 - **MONGODB_URI**: The connection string for your MongoDB database.
 
 - **PORT**: The port number on which the server will run.
+- **Don't forget to add your ip address to mongodb network access**
