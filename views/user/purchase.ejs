@@ -4,8 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Course</title>
+    <!-- Prevent browser from caching this page -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        /* Coupon section styling */
+        .coupon-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .coupon-input-group {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .coupon-control {
+            border-radius: 50px;
+            padding-right: 100px;
+            height: 50px;
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .coupon-control:focus {
+            border-color: #4e73df;
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+            background-color: #fff;
+        }
+        
+        .coupon-button {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            height: 40px;
+            border-radius: 40px;
+            z-index: 5;
+            padding: 0 20px;
+            background-color: #4e73df;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            transform: translateZ(0);
+        }
+        
+        .coupon-button:hover {
+            background-color: #375bd2;
+        }
+        
+        /* Animation for coupon application */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes slide-in {
+            0% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+        }
+        
+        .discounted-price {
+            font-weight: bold;
+            color: #28a745;
+            font-size: 1.25rem;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        .original-price {
+            text-decoration: line-through;
+            color: #dc3545;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        
+        .discount-badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background-color: #ffc107;
+            color: #000;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            animation: pulse 0.5s ease-in-out;
+            z-index: 10;
+        }
+        
+        .discount-info {
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px dashed #4e73df;
+            background-color: #f0f4ff;
+            margin: 15px 0;
+            position: relative;
+            animation: slide-in 0.5s ease-out;
+            display: none;
+        }
+        
+        .discount-info.show {
+            display: block;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: confetti 1s ease-out forwards;
+        }
+        
+        .coupon-error {
+            color: #dc3545;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .coupon-error.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <%- include('../partials/navbar') %>
@@ -29,7 +162,9 @@
                         <% } %>
                         
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="text-primary mb-0">₹<%= course.price.toFixed(2) %></h5>
+                            <div id="price-display">
+                                <h5 class="text-primary mb-0">₹<%= course.price.toFixed(2) %></h5>
+                            </div>
                         </div>
                         
                         <% if(course.description) { %>
@@ -47,7 +182,27 @@
                         <h5 class="card-title mb-0">Payment Instructions</h5>
                     </div>
                     <div class="card-body">
-                        <p>Please pay <strong style="font-size: 1.1em;">₹<%= course.price.toFixed(2) %></strong> using your preferred UPI app:</p>
+                        <div class="coupon-container">
+                            <div class="coupon-input-group">
+                                <input type="text" id="couponCode" class="form-control coupon-control" placeholder="Enter coupon code">
+                                <button type="button" id="applyCouponBtn" class="btn coupon-button">Apply</button>
+                            </div>
+                            <div id="couponError" class="coupon-error">Invalid coupon code</div>
+                            <div id="discountInfo" class="discount-info">
+                                <div id="discountBadge" class="discount-badge">-₹0.00</div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="mb-1"><strong>Coupon Applied:</strong> <span id="appliedCouponCode">CODE</span></div>
+                                        <div>Original Price: <span id="originalPrice" class="original-price">₹<%= course.price.toFixed(2) %></span></div>
+                                    </div>
+                                    <div>
+                                        <div id="finalPrice" class="discounted-price">₹<%= course.price.toFixed(2) %></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p id="payment-amount">Please pay <strong style="font-size: 1.1em;">₹<%= course.price.toFixed(2) %></strong> using your preferred UPI app:</p>
                         <div class="alert alert-primary text-center">
                             <h5 class="mb-0"><%= locals.paymentSettings && paymentSettings.upiId ? paymentSettings.upiId : 'courseprovider@postbank' %></h5>
                         </div>
@@ -62,7 +217,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="d-grid gap-2 h-100 d-flex flex-column justify-content-center">
-                                    <a href="upi://pay?pa=<%= locals.paymentSettings && paymentSettings.upiId ? paymentSettings.upiId : 'courseprovider@postbank' %>&pn=<%= locals.paymentSettings && paymentSettings.businessName ? paymentSettings.businessName : 'CourseStore' %>&am=<%= course.price %>&cu=INR" 
+                                    <a id="upiPayLink" href="upi://pay?pa=<%= locals.paymentSettings && paymentSettings.upiId ? paymentSettings.upiId : 'courseprovider@postbank' %>&pn=<%= locals.paymentSettings && paymentSettings.businessName ? paymentSettings.businessName : 'CourseStore' %>&am=<%= course.price %>&cu=INR" 
                                        class="btn btn-lg btn-success">
                                         <i class="bi bi-credit-card-fill me-2"></i>Pay with UPI App
                                     </a>
@@ -82,7 +237,10 @@
                         <h5 class="card-title mb-0">Submit Purchase Details</h5>
                     </div>
                     <div class="card-body">
-                        <form action="/submit-purchase/<%= course._id %>" method="POST">
+                        <form action="/submit-purchase/<%= course._id %>" method="POST" id="purchaseForm">
+                            <input type="hidden" id="couponInput" name="couponCode" value="">
+                            <input type="hidden" id="couponValidationTime" name="validationTime" value="">
+                            <input type="hidden" id="couponSessionToken" name="sessionToken" value="">
                             <div class="mb-3">
                                 <label for="userEmail" class="form-label">Your Email Address</label>
                                 <input type="email" class="form-control" id="userEmail" name="userEmail" placeholder="Enter your email" required>
@@ -117,5 +275,277 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseId = '<%= course._id %>';
+            const coursePrice = <%= course.price %>;
+            let finalPrice = coursePrice;
+            let couponValidationTimestamp = null;
+            
+            // Elements
+            const couponInput = document.getElementById('couponCode');
+            const couponButton = document.getElementById('applyCouponBtn');
+            const couponError = document.getElementById('couponError');
+            const discountInfo = document.getElementById('discountInfo');
+            const discountBadge = document.getElementById('discountBadge');
+            const appliedCouponCode = document.getElementById('appliedCouponCode');
+            const originalPrice = document.getElementById('originalPrice');
+            const finalPriceDisplay = document.getElementById('finalPrice');
+            const priceDisplay = document.getElementById('price-display');
+            const paymentAmount = document.getElementById('payment-amount');
+            const upiPayLink = document.getElementById('upiPayLink');
+            const couponHiddenInput = document.getElementById('couponInput');
+            const purchaseForm = document.getElementById('purchaseForm');
+            
+            // Handle browser back button and page reload
+            window.addEventListener('pageshow', function(event) {
+                // If the page is loaded from the cache (back button) or normally
+                if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                    // Reset coupon state
+                    resetCouponState();
+                } else {
+                    // Fresh page load - check localStorage for any previously applied coupons
+                    checkForExpiredCoupon();
+                }
+            });
+            
+            function checkForExpiredCoupon() {
+                const storedCoupon = localStorage.getItem('appliedCoupon_' + courseId);
+                
+                if (storedCoupon) {
+                    try {
+                        const couponData = JSON.parse(storedCoupon);
+                        const currentTime = Date.now();
+                        const validityPeriod = 30 * 60 * 1000; // 30 minutes in milliseconds
+                        
+                        // If the coupon was applied more than 30 minutes ago, clear it
+                        if (currentTime - couponData.timestamp > validityPeriod) {
+                            localStorage.removeItem('appliedCoupon_' + courseId);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing stored coupon data:', error);
+                        localStorage.removeItem('appliedCoupon_' + courseId);
+                    }
+                }
+            }
+            
+            function resetCouponState() {
+                // Clear any applied coupon
+                couponInput.value = '';
+                couponHiddenInput.value = '';
+                document.getElementById('couponValidationTime').value = '';
+                document.getElementById('couponSessionToken').value = '';
+                couponValidationTimestamp = null;
+                discountInfo.classList.remove('show');
+                
+                // Reset price display
+                priceDisplay.innerHTML = `<h5 class="text-primary mb-0">₹${coursePrice.toFixed(2)}</h5>`;
+                
+                // Reset payment amount text
+                updatePaymentAmountText(coursePrice);
+                
+                // Reset UPI payment link
+                updateUpiPaymentLink(coursePrice);
+                
+                // Remove stored coupon data
+                localStorage.removeItem('appliedCoupon_' + courseId);
+            }
+            
+            // Apply coupon button click
+            couponButton.addEventListener('click', function() {
+                applyCoupon();
+            });
+            
+            // Also apply coupon on Enter key
+            couponInput.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    applyCoupon();
+                }
+            });
+            
+            // Form submission validation
+            purchaseForm.addEventListener('submit', function(event) {
+                if (couponHiddenInput.value) {
+                    // Check if the coupon validation has expired
+                    const currentTime = Date.now();
+                    const validityPeriod = 30 * 60 * 1000; // 30 minutes
+                    
+                    if (!couponValidationTimestamp || (currentTime - couponValidationTimestamp > validityPeriod)) {
+                        event.preventDefault();
+                        alert('Your coupon has expired due to inactivity. Please apply the coupon again before submitting.');
+                        resetCouponState();
+                        return false;
+                    }
+                }
+            });
+            
+            function applyCoupon() {
+                const couponCode = couponInput.value.trim();
+                
+                if (!couponCode) {
+                    showCouponError('Please enter a coupon code');
+                    return;
+                }
+                
+                // Change button state to loading
+                couponButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                couponButton.disabled = true;
+                
+                // Hide previous error
+                couponError.classList.remove('show');
+                
+                // Make API call to validate coupon
+                fetch('/validate-coupon', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        couponCode: couponCode,
+                        courseId: courseId
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button state
+                    couponButton.innerHTML = 'Apply';
+                    couponButton.disabled = false;
+                    
+                    if (data.success) {
+                        // Store the validation timestamp
+                        couponValidationTimestamp = data.timestamp || Date.now();
+                        
+                        // Save applied coupon to localStorage with timestamp
+                        localStorage.setItem('appliedCoupon_' + courseId, JSON.stringify({
+                            code: data.coupon.code,
+                            timestamp: couponValidationTimestamp,
+                            finalPrice: data.finalPrice
+                        }));
+                        
+                        // Set validation values in hidden fields
+                        couponHiddenInput.value = data.coupon.code;
+                        document.getElementById('couponValidationTime').value = couponValidationTimestamp;
+                        document.getElementById('couponSessionToken').value = generateSessionToken(data.coupon.code, couponValidationTimestamp);
+                        
+                        // Show discount info
+                        showDiscountInfo(data);
+                        
+                        // Update price display
+                        updatePriceDisplay(data);
+                        
+                        // Update payment amount text
+                        updatePaymentAmountText(data.finalPrice);
+                        
+                        // Update UPI payment link
+                        updateUpiPaymentLink(data.finalPrice);
+                        
+                        // Show confetti animation
+                        showConfetti();
+                    } else {
+                        showCouponError(data.message);
+                    }
+                })
+                .catch(error => {
+                    couponButton.innerHTML = 'Apply';
+                    couponButton.disabled = false;
+                    showCouponError('An error occurred. Please try again.');
+                    console.error('Error:', error);
+                });
+            }
+            
+            function showDiscountInfo(data) {
+                appliedCouponCode.textContent = data.coupon.code;
+                originalPrice.textContent = '₹' + data.originalPrice.toFixed(2);
+                finalPriceDisplay.textContent = '₹' + data.finalPrice.toFixed(2);
+                
+                // Set discount badge
+                const discountPercent = Math.round((data.discountAmount / data.originalPrice) * 100);
+                if (data.coupon.discountType === 'percentage') {
+                    discountBadge.textContent = '-' + data.coupon.discountValue + '%';
+                } else {
+                    discountBadge.textContent = '-₹' + data.discountAmount.toFixed(2);
+                }
+                
+                // Show the discount info with animation
+                discountInfo.classList.add('show');
+            }
+            
+            function updatePriceDisplay(data) {
+                // Update the price display in the course details section
+                priceDisplay.innerHTML = `
+                    <h5 class="discounted-price mb-0">₹${data.finalPrice.toFixed(2)}</h5>
+                    <small class="original-price">₹${data.originalPrice.toFixed(2)}</small>
+                `;
+            }
+            
+            function updatePaymentAmountText(finalPrice) {
+                paymentAmount.innerHTML = `Please pay <strong style="font-size: 1.1em;">₹${finalPrice.toFixed(2)}</strong> using your preferred UPI app:`;
+            }
+            
+            function updateUpiPaymentLink(finalPrice) {
+                const upiId = '<%= locals.paymentSettings && paymentSettings.upiId ? paymentSettings.upiId : "courseprovider@postbank" %>';
+                const businessName = '<%= locals.paymentSettings && paymentSettings.businessName ? paymentSettings.businessName : "CourseStore" %>';
+                
+                const newHref = `upi://pay?pa=${upiId}&pn=${businessName}&am=${finalPrice}&cu=INR`;
+                upiPayLink.setAttribute('href', newHref);
+            }
+            
+            function showCouponError(message) {
+                couponError.textContent = message;
+                couponError.classList.add('show');
+                
+                // Hide the discount info if there was a previous successful application
+                discountInfo.classList.remove('show');
+                
+                // Reset price display
+                priceDisplay.innerHTML = `<h5 class="text-primary mb-0">₹${coursePrice.toFixed(2)}</h5>`;
+                
+                // Reset payment amount text
+                updatePaymentAmountText(coursePrice);
+                
+                // Reset UPI payment link
+                updateUpiPaymentLink(coursePrice);
+                
+                // Clear hidden input
+                couponHiddenInput.value = '';
+            }
+            
+            function showConfetti() {
+                const colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'];
+                const confettiCount = 50;
+                const container = document.querySelector('.coupon-container');
+                
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '0';
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    
+                    container.appendChild(confetti);
+                    
+                    // Remove confetti after animation ends
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 1500);
+                }
+            }
+            
+            // Generate a unique session token based on the coupon and timestamp
+            function generateSessionToken(couponCode, timestamp) {
+                // Simple hash function for demonstration
+                // In production, you might want to use a more sophisticated method
+                const combined = couponCode + timestamp + courseId;
+                let hash = 0;
+                for (let i = 0; i < combined.length; i++) {
+                    const char = combined.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return Math.abs(hash).toString(36);
+            }
+        });
+    </script>
 </body>
 </html> 

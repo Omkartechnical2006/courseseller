@@ -3,6 +3,7 @@ const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
 const PaymentSettings = require('../models/PaymentSettings');
 const Admin = require('../models/Admin');
+const Coupon = require('../models/Coupon');
 const isAdmin = require('../middleware/adminAuth');
 
 const router = express.Router();
@@ -308,6 +309,126 @@ router.post('/purchases/update', async (req, res, next) => {
         res.redirect('/admin/purchases');
     } catch (error) {
         console.error("Error updating purchase details:", error);
+        next(error);
+    }
+});
+
+// GET route to view all coupons
+router.get('/coupons', async (req, res, next) => {
+    try {
+        const coupons = await Coupon.find().sort({ createdAt: -1 });
+        const courses = await Course.find({}, '_id heading');
+        
+        res.render('admin/coupons', { 
+            coupons, 
+            courses,
+            error: req.query.error,
+            message: req.query.message 
+        });
+    } catch (error) {
+        console.error("Error fetching coupons:", error);
+        next(error);
+    }
+});
+
+// POST route to create a new coupon
+router.post('/coupons/create', async (req, res, next) => {
+    try {
+        const { 
+            code, 
+            discountType, 
+            discountValue, 
+            maxDiscountAmount, 
+            minPurchaseAmount,
+            validFrom,
+            validUntil,
+            usageLimit,
+            courses,
+            isActive
+        } = req.body;
+        
+        // Check if coupon with the same code already exists
+        const existingCoupon = await Coupon.findOne({ code: code.toUpperCase() });
+        if (existingCoupon) {
+            return res.redirect('/admin/coupons?error=Coupon with this code already exists');
+        }
+        
+        // Create the new coupon
+        const coupon = new Coupon({
+            code,
+            discountType,
+            discountValue: parseFloat(discountValue),
+            maxDiscountAmount: maxDiscountAmount ? parseFloat(maxDiscountAmount) : null,
+            minPurchaseAmount: minPurchaseAmount ? parseFloat(minPurchaseAmount) : 0,
+            validFrom: validFrom || Date.now(),
+            validUntil: validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            usageLimit: usageLimit || null,
+            courses: courses || [],
+            isActive: isActive === 'on'
+        });
+        
+        await coupon.save();
+        res.redirect('/admin/coupons?message=Coupon created successfully');
+    } catch (error) {
+        console.error("Error creating coupon:", error);
+        res.redirect('/admin/coupons?error=' + encodeURIComponent(error.message));
+    }
+});
+
+// POST route to update a coupon
+router.post('/coupons/:id/update', async (req, res, next) => {
+    try {
+        const couponId = req.params.id;
+        const { 
+            discountType, 
+            discountValue, 
+            maxDiscountAmount, 
+            minPurchaseAmount,
+            validFrom,
+            validUntil,
+            usageLimit,
+            courses,
+            isActive
+        } = req.body;
+        
+        // Update the coupon
+        const coupon = await Coupon.findById(couponId);
+        if (!coupon) {
+            return res.redirect('/admin/coupons?error=Coupon not found');
+        }
+        
+        coupon.discountType = discountType;
+        coupon.discountValue = parseFloat(discountValue);
+        coupon.maxDiscountAmount = maxDiscountAmount ? parseFloat(maxDiscountAmount) : null;
+        coupon.minPurchaseAmount = minPurchaseAmount ? parseFloat(minPurchaseAmount) : 0;
+        coupon.validFrom = validFrom || coupon.validFrom;
+        coupon.validUntil = validUntil || coupon.validUntil;
+        coupon.usageLimit = usageLimit || null;
+        coupon.courses = courses || [];
+        coupon.isActive = isActive === 'on';
+        
+        await coupon.save();
+        res.redirect('/admin/coupons?message=Coupon updated successfully');
+    } catch (error) {
+        console.error("Error updating coupon:", error);
+        res.redirect('/admin/coupons?error=' + encodeURIComponent(error.message));
+    }
+});
+
+// POST route to delete a coupon
+router.post('/coupons/:id/delete', async (req, res, next) => {
+    try {
+        const couponId = req.params.id;
+        
+        const deletedCoupon = await Coupon.findByIdAndDelete(couponId);
+        
+        if (!deletedCoupon) {
+            return res.status(404).send('Coupon not found');
+        }
+        
+        res.redirect('/admin/coupons?message=Coupon deleted successfully');
+    } catch (error) {
+        console.error("Error deleting coupon:", error);
         next(error);
     }
 });

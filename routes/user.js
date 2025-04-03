@@ -2,6 +2,7 @@ const express = require('express');
 const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
 const PaymentSettings = require('../models/PaymentSettings');
+const Coupon = require('../models/Coupon');
 
 const router = express.Router();
 
@@ -25,21 +26,121 @@ router.get('/purchase/:courseId', async (req, res, next) => {
             return res.status(404).send('Course not found');
         }
         
+        // Reset any existing coupon for this course when viewing the purchase page
+        if (req.session.coupons && req.session.coupons[req.params.courseId]) {
+            delete req.session.coupons[req.params.courseId];
+        }
+        
         // Get payment settings
         const paymentSettings = await PaymentSettings.getSettings();
         
+        // Initialize discount info
+        const discountInfo = {
+            appliedCoupon: null,
+            originalPrice: course.price,
+            discountAmount: 0,
+            finalPrice: course.price
+        };
+        
         // Here you would typically show payment instructions (e.g., UPI ID)
-        res.render('user/purchase', { course, paymentSettings });
+        res.render('user/purchase', { 
+            course, 
+            paymentSettings, 
+            discountInfo,
+            couponError: req.query.couponError
+        });
     } catch (error) {
         console.error("Error fetching course for purchase:", error);
         next(error);
     }
 });
 
+// POST route to validate and apply coupon
+router.post('/validate-coupon', async (req, res, next) => {
+    try {
+        const { couponCode, courseId } = req.body;
+        
+        if (!couponCode || !courseId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Coupon code and course ID are required' 
+            });
+        }
+        
+        // Find the coupon by code
+        const coupon = await Coupon.findOne({ 
+            code: couponCode.toUpperCase(),
+            isActive: true
+        });
+        
+        if (!coupon) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Invalid coupon code' 
+            });
+        }
+        
+        // Find the course
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Course not found' 
+            });
+        }
+        
+        // Validate the coupon
+        const validationResult = coupon.isValid(courseId, course.price);
+        if (!validationResult.valid) {
+            return res.status(400).json({ 
+                success: false, 
+                message: validationResult.reason 
+            });
+        }
+        
+        // Calculate the discount
+        const discountAmount = coupon.calculateDiscount(course.price);
+        const finalPrice = Math.max(0, course.price - discountAmount);
+        
+        // Store coupon validation information in session with timestamp
+        if (!req.session.coupons) {
+            req.session.coupons = {};
+        }
+        
+        req.session.coupons[courseId] = {
+            code: coupon.code,
+            timestamp: Date.now(),
+            originalPrice: course.price,
+            discountAmount: discountAmount,
+            finalPrice: finalPrice
+        };
+        
+        res.json({
+            success: true,
+            coupon: {
+                code: coupon.code,
+                discountType: coupon.discountType,
+                discountValue: coupon.discountValue
+            },
+            originalPrice: course.price,
+            discountAmount,
+            finalPrice,
+            timestamp: Date.now(),
+            message: 'Coupon applied successfully'
+        });
+    } catch (error) {
+        console.error("Error validating coupon:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error occurred' 
+        });
+    }
+});
+
 // POST route to submit purchase details (email and transaction ID)
 router.post('/submit-purchase/:courseId', async (req, res, next) => {
     try {
-        const { userEmail, transactionId, userName } = req.body;
+        const { userEmail, transactionId, userName, couponCode, validationTime, sessionToken } = req.body;
         const courseId = req.params.courseId;
         
         // Get payment settings for support contact info
@@ -70,7 +171,7 @@ router.post('/submit-purchase/:courseId', async (req, res, next) => {
             });
         }
 
-        // Optional: Validate if course exists again
+        // Validate if course exists again
         const course = await Course.findById(courseId);
         if (!course) {
             return res.render('user/error', {
@@ -83,13 +184,102 @@ router.post('/submit-purchase/:courseId', async (req, res, next) => {
             });
         }
 
+        // Initialize pricing variables
+        let originalPrice = course.price;
+        let discountAmount = 0;
+        let finalPrice = course.price;
+        let couponUsed = null;
+
+        // Helper function to generate the same session token as the client
+        function generateSessionToken(couponCode, timestamp, courseId) {
+            const combined = couponCode + timestamp + courseId;
+            let hash = 0;
+            for (let i = 0; i < combined.length; i++) {
+                const char = combined.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(36);
+        }
+
+        // If coupon code is provided, validate it with security checks
+        if (couponCode) {
+            // Verify coupon timestamp is valid (not too old) and session token matches
+            const couponExpiry = 30 * 60 * 1000; // 30 minutes in milliseconds
+            const timestamp = parseInt(validationTime, 10);
+            const currentTime = Date.now();
+            
+            // Check if timestamp is valid and not expired
+            if (timestamp && !isNaN(timestamp) && (currentTime - timestamp < couponExpiry)) {
+                // Verify session token matches expected value
+                const expectedToken = generateSessionToken(couponCode, timestamp, courseId);
+                
+                if (sessionToken === expectedToken) {
+                    // Check for session-based coupon validation first
+                    const sessionCoupon = req.session.coupons && req.session.coupons[courseId];
+                    
+                    if (sessionCoupon && sessionCoupon.code === couponCode && 
+                        currentTime - sessionCoupon.timestamp < couponExpiry) {
+                        // Use the pre-validated coupon from session
+                        originalPrice = sessionCoupon.originalPrice;
+                        discountAmount = sessionCoupon.discountAmount;
+                        finalPrice = sessionCoupon.finalPrice;
+                        couponUsed = sessionCoupon.code;
+                        
+                        // Update coupon usage
+                        const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+                        if (coupon) {
+                            coupon.usedCount += 1;
+                            await coupon.save();
+                        }
+                    } 
+                    // If no valid session coupon or coupon doesn't match, validate again
+                    else {
+                        const coupon = await Coupon.findOne({ 
+                            code: couponCode.toUpperCase(),
+                            isActive: true
+                        });
+                        
+                        if (coupon) {
+                            // Validate the coupon
+                            const validationResult = coupon.isValid(courseId, course.price);
+                            if (validationResult.valid) {
+                                // Calculate the discount
+                                discountAmount = coupon.calculateDiscount(course.price);
+                                finalPrice = Math.max(0, course.price - discountAmount);
+                                
+                                // Increment the coupon usage counter
+                                coupon.usedCount += 1;
+                                await coupon.save();
+                                
+                                couponUsed = coupon.code;
+                            }
+                        }
+                    }
+                } else {
+                    console.log("Session token mismatch, ignoring coupon");
+                }
+            } else {
+                console.log("Coupon timestamp expired or invalid, ignoring coupon");
+            }
+        }
+
         const newPurchase = new Purchase({
             course: courseId,
             userEmail: userEmail,
             transactionId: transactionId,
-            userName: userName || 'Anonymous'
+            userName: userName || 'Anonymous',
+            couponCode: couponUsed,
+            originalPrice,
+            discountAmount,
+            finalPrice
         });
         await newPurchase.save();
+
+        // Clear the coupon from session after purchase is completed
+        if (req.session.coupons && req.session.coupons[courseId]) {
+            delete req.session.coupons[courseId];
+        }
 
         // Redirect to a success page
         res.redirect('/success');

@@ -32,6 +32,25 @@ const purchaseSchema = new mongoose.Schema({
         enum: ['pending', 'verified', 'failed'],
         default: 'pending'
     },
+    // Add coupon and discount information
+    couponCode: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        default: null
+    },
+    originalPrice: {
+        type: Number,
+        default: null
+    },
+    discountAmount: {
+        type: Number,
+        default: 0
+    },
+    finalPrice: {
+        type: Number,
+        default: null
+    },
     // Add other fields like userLocation if needed
     // userLocation: { type: String },
     createdAt: {
