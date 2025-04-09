@@ -51,7 +51,7 @@ The application is live at: [https://courseseller-y3vj.onrender.com](https://cou
 3. **Set up environment variables**
    Create a `.env` file in the root directory with the following variables:
    ```
-   MONGODB_URI=your_mongodb_connection_string
+   MONGODB_URI=mongodb+srv://ziya:cFY.GVM2qrmVfVs@cluster0.zkaj1au.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
    PORT=3000
    ```
 
