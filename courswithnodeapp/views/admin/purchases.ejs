@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - View Purchases</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --info-color: #36b9cc;
+            --dark-color: #2a313b;
+            --light-color: #f8f9fc;
+            --card-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            --border-radius: 0.5rem;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        /* Custom scrollbar for description container */
+        .description-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .description-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .description-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        
+        .description-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .sidebar {
+            background: linear-gradient(to bottom, var(--primary-color), #224abe);
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: width 0.3s ease;
+            width: 230px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+            padding-top: 1rem;
+        }
+        
+        .sidebar-header {
+            height: 4.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-brand {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+        }
+        
+        .sidebar-divider {
+            margin: 1rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .nav-item {
+            padding: 0 1rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-icon {
+            margin-right: 0.8rem;
+            font-size: 1rem;
+        }
+        
+        .main-content {
+            margin-left: 230px;
+            padding: 1.5rem;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .topbar {
+            height: 4.375rem;
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .topbar-title {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--dark-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: none;
+        }
+        
+        .dashboard-card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1.5rem;
+            background-color: white;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.3rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        .table-image {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: var(--border-radius);
+        }
+        
+        .purchase-row {
+            transition: background-color 0.2s ease;
+        }
+        
+        .purchase-row:hover {
+            background-color: rgba(78, 115, 223, 0.05) !important;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 250px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .toggle-sidebar {
+                display: block;
+            }
+            
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.3);
+                z-index: 999;
+                display: none;
+            }
+            
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin" class="sidebar-brand">
+                <i class="bi bi-speedometer2 me-2"></i>
+                Admin
+            </a>
+        </div>
+        
+        <hr class="sidebar-divider">
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/admin">
+                    <i class="bi bi-house-door nav-icon"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/courses">
+                    <i class="bi bi-book nav-icon"></i>
+                    Courses
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/upload">
+                    <i class="bi bi-cloud-upload nav-icon"></i>
+                    Upload Course
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/admin/purchases">
+                    <i class="bi bi-cart-check nav-icon"></i>
+                    Purchases
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/payment-settings">
+                    <i class="bi bi-credit-card nav-icon"></i>
+                    Payment Settings
+                </a>
+            </li>
+            
+            <hr class="sidebar-divider">
+            
+            <li class="nav-item">
+                <a class="nav-link" href="/">
+                    <i class="bi bi-globe nav-icon"></i>
+                    View Website
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <!-- Sidebar backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Topbar -->
+        <div class="topbar mb-4">
+            <button class="toggle-sidebar" id="toggleSidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <h1 class="topbar-title">Purchase Management</h1>
+            <div>
+                <span class="d-none d-md-inline text-muted me-2">Total: <%= purchases.length %></span>
+                <i class="bi bi-cash-stack fs-5"></i>
+            </div>
+        </div>
+
+        <% if (purchases.length === 0) { %>
+            <div class="dashboard-card">
+                <div class="card-body text-center py-5 px-4">
+                    <i class="bi bi-cart-x fs-1 text-primary mb-3"></i>
+                    <h4 class="mb-3">No purchases recorded yet</h4>
+                    <p class="text-muted mb-4">Purchase data will appear here when customers buy your courses.</p>
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-up-right-circle me-2"></i>View Frontend
+                    </a>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="dashboard-card">
+                <div class="card-header d-flex justify-content-between align-items-center p-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-receipt-cutoff text-primary me-2 fs-5"></i>
+                        <h5 class="card-title mb-0">Purchase Records</h5>
+                    </div>
+                    <span class="badge bg-primary px-3 py-2"><%= purchases.length %> Transactions</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 border-top">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="px-4 py-3">Date</th>
+                                    <th class="px-4 py-3">User Email</th>
+                                    <th class="px-4 py-3">Course</th>
+                                    <th class="px-4 py-3">Price</th>
+                                    <th class="px-4 py-3">Transaction ID</th>
+                                    <th class="px-4 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% purchases.forEach(purchase => { %>
+                                    <tr class="purchase-row" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#purchaseModal<%= purchase._id %>">
+                                        <td class="px-4 py-3"><%= purchase.createdAt.toLocaleString() %></td>
+                                        <td class="px-4 py-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle text-secondary me-2"></i>
+                                                <%= purchase.userEmail %>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <% if (purchase.course && purchase.course.imageUrl) { %>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="<%= purchase.course.imageUrl %>" alt="Course" class="table-image me-2">
+                                                    <div class="text-truncate" style="max-width: 150px;">
+                                                        <%= purchase.course.heading || 'Course' %>
+                                                    </div>
+                                                </div>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">Course deleted</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <% if (purchase.finalPrice !== undefined && purchase.finalPrice !== null) { %>
+                                                <span class="fw-bold text-success">₹<%= purchase.finalPrice.toFixed(2) %></span>
+                                                <% if (purchase.couponCode) { %>
+                                                    <div>
+                                                        <small class="text-muted text-decoration-line-through">₹<%= purchase.originalPrice.toFixed(2) %></small>
+                                                        <span class="badge bg-warning text-dark ms-1"><%= purchase.couponCode %></span>
+                                                    </div>
+                                                <% } %>
+                                            <% } else if (purchase.course && purchase.course.price !== undefined) { %>
+                                                <span class="fw-bold text-success">₹<%= purchase.course.price.toFixed(2) %></span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">N/A</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="badge bg-light text-dark p-2">
+                                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                                <%= purchase.transactionId %>
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <% if (purchase.status === 'verified') { %>
+                                                <span class="badge bg-success">Verified</span>
+                                            <% } else if (purchase.status === 'failed') { %>
+                                                <span class="badge bg-danger">Failed</span>
+                                            <% } else { %>
+                                                <span class="badge bg-info">Pending</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Purchase Modals -->
+            <% purchases.forEach(purchase => { %>
+                <div class="modal fade" id="purchaseModal<%= purchase._id %>" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-light">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-bag-check text-primary me-2"></i>
+                                    Purchase Details
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="row">
+                                    <div class="col-md-5 mb-4 mb-md-0">
+                                        <% if (purchase.course && purchase.course.imageUrl) { %>
+                                            <img src="<%= purchase.course.imageUrl %>" alt="Course" class="img-fluid rounded shadow-sm" style="width: 100%; height: 220px; object-fit: cover;">
+                                        <% } else { %>
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 220px;">
+                                                <i class="bi bi-image text-secondary fs-1"></i>
+                                            </div>
+                                        <% } %>
+                                        
+                                        <div class="mt-3 mb-4">
+                                            <h6 class="text-muted mb-2">Transaction Details</h6>
+                                            <div class="bg-light p-3 rounded shadow-sm">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Transaction ID:</span>
+                                                    <span class="badge bg-light text-dark p-2">
+                                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                                        <%= purchase.transactionId %>
+                                                    </span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Date:</span>
+                                                    <span><%= purchase.createdAt.toLocaleString() %></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Price:</span>
+                                                    <% if (purchase.finalPrice !== undefined && purchase.finalPrice !== null) { %>
+                                                        <span class="fw-bold text-success">₹<%= purchase.finalPrice.toFixed(2) %></span>
+                                                    <% } else if (purchase.course && purchase.course.price !== undefined) { %>
+                                                        <span class="fw-bold text-success">₹<%= purchase.course.price.toFixed(2) %></span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-secondary">N/A</span>
+                                                    <% } %>
+                                                </div>
+                                                <% if (purchase.couponCode) { %>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Original Price:</span>
+                                                    <span class="text-decoration-line-through">₹<%= purchase.originalPrice.toFixed(2) %></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Coupon Applied:</span>
+                                                    <span class="badge bg-warning text-dark"><%= purchase.couponCode %></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Discount:</span>
+                                                    <span class="text-danger">-₹<%= purchase.discountAmount.toFixed(2) %></span>
+                                                </div>
+                                                <% } %>
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted">Status:</span>
+                                                    <% if (purchase.status === 'verified') { %>
+                                                        <span class="badge bg-success">Verified</span>
+                                                    <% } else if (purchase.status === 'failed') { %>
+                                                        <span class="badge bg-danger">Failed</span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-info">Pending</span>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-7">
+                                        <div class="mb-4">
+                                            <h6 class="text-muted mb-2">Course Information</h6>
+                                            <div class="bg-light p-3 rounded shadow-sm">
+                                                <% if (purchase.course) { %>
+                                                    <h5 class="fw-bold mb-3 text-primary"><%= purchase.course.heading || 'Untitled Course' %></h5>
+                                                    <div class="description-container mb-1 text-muted" style="max-height: 150px; overflow-y: auto; border: 1px solid #e9ecef; padding: 10px; border-radius: 5px;"><%- purchase.course.description || 'No description available' %></div>
+                                                <% } else { %>
+                                                    <div class="alert alert-warning mb-0">
+                                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                                        Course information is no longer available
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <h6 class="text-muted mb-2">Customer Information</h6>
+                                            <div class="bg-light p-3 rounded shadow-sm">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <i class="bi bi-person-circle fs-4 text-secondary me-2"></i>
+                                                    <div>
+                                                        <h6 class="mb-0"><%= purchase.userEmail %></h6>
+                                                        <small class="text-muted">Customer Email</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-person-badge fs-4 text-secondary me-2"></i>
+                                                    <div>
+                                                        <h6 class="mb-0"><%= purchase.userName || purchase.customerName || 'Anonymous' %></h6>
+                                                        <small class="text-muted">Customer Name</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <h6 class="text-muted mb-2">Purchase Actions</h6>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button type="button" class="btn btn-primary edit-transaction-btn" data-purchase-id="<%= purchase._id %>">
+                                                <i class="bi bi-pencil-square me-1"></i> Edit Transaction
+                                            </button>
+                                            <form action="/admin/purchases/<%= purchase._id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this transaction? This action cannot be undone.')">
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-trash me-1"></i> Delete Transaction
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-success verify-payment-btn" data-purchase-id="<%= purchase._id %>">
+                                                <i class="bi bi-check-circle me-1"></i> Verify Payment
+                                            </button>
+                                            <button type="button" class="btn btn-danger mark-failed-btn" data-purchase-id="<%= purchase._id %>">
+                                                <i class="bi bi-x-circle me-1"></i> Mark as Failed
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } %>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>
+                        Edit Transaction
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editTransactionForm" action="/admin/purchases/update" method="POST">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="editPurchaseId" name="purchaseId">
+                        
+                        <div class="mb-3">
+                            <label for="editTransactionId" class="form-label">Transaction ID</label>
+                            <input type="text" class="form-control" id="editTransactionId" name="transactionId" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editUserEmail" class="form-label">Customer Email</label>
+                            <input type="email" class="form-control" id="editUserEmail" name="userEmail" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editUserName" class="form-label">Customer Name</label>
+                            <input type="text" class="form-control" id="editUserName" name="userName" placeholder="Anonymous">
+                            <div class="form-text">If left empty, 'Anonymous' will be used</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editStatus" class="form-label">Payment Status</label>
+                            <select class="form-select" id="editStatus" name="status">
+                                <option value="pending">Pending</option>
+                                <option value="verified">Verified</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Price & Coupon Information</h6>
+                        
+                        <div class="mb-3">
+                            <label for="editOriginalPrice" class="form-label">Original Price (₹)</label>
+                            <input type="number" step="0.01" class="form-control" id="editOriginalPrice" name="originalPrice">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editCouponCode" class="form-label">Coupon Code</label>
+                            <input type="text" class="form-control" id="editCouponCode" name="couponCode" placeholder="No coupon applied">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editDiscountAmount" class="form-label">Discount Amount (₹)</label>
+                            <input type="number" step="0.01" class="form-control" id="editDiscountAmount" name="discountAmount" placeholder="0.00">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editFinalPrice" class="form-label">Final Price (₹)</label>
+                            <input type="number" step="0.01" class="form-control" id="editFinalPrice" name="finalPrice">
+                            <div class="form-text">The actual amount paid by the customer after discount</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            const toggleSidebar = document.getElementById('toggleSidebar');
+            
+            // Toggle sidebar on button click
+            toggleSidebar.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                sidebarBackdrop.classList.toggle('show');
+            });
+            
+            // Close sidebar when clicking on backdrop
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarBackdrop.classList.remove('show');
+            });
+            
+            // Close sidebar on window resize if in mobile view
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992) {
+                    sidebar.classList.remove('show');
+                    sidebarBackdrop.classList.remove('show');
+                }
+            });
+        });
+    </script>
+    
+    <!-- Purchase actions script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevent clicks within cells from triggering row click (modal open)
+            document.querySelectorAll('.purchase-row a, .purchase-row form, .purchase-row button').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+
+            // Transaction data for each purchase
+            const purchaseData = {};
+            <% purchases.forEach(purchase => { %>
+                purchaseData['<%= purchase._id %>'] = {
+                    id: '<%= purchase._id %>',
+                    transactionId: '<%= purchase.transactionId %>',
+                    userEmail: '<%= purchase.userEmail %>',
+                    userName: '<%= purchase.userName || purchase.customerName || "Anonymous" %>',
+                    status: '<%= purchase.status || "pending" %>',
+                    finalPrice: '<%= purchase.finalPrice !== undefined && purchase.finalPrice !== null ? purchase.finalPrice.toFixed(2) : (purchase.course && purchase.course.price !== undefined ? purchase.course.price.toFixed(2) : "N/A") %>',
+                    originalPrice: '<%= purchase.originalPrice !== undefined && purchase.originalPrice !== null ? purchase.originalPrice.toFixed(2) : "N/A" %>',
+                    couponCode: '<%= purchase.couponCode || "" %>',
+                    discountAmount: '<%= purchase.discountAmount !== undefined ? purchase.discountAmount.toFixed(2) : "0.00" %>'
+                };
+            <% }); %>
+            
+            // Edit Transaction Button
+            document.querySelectorAll('.edit-transaction-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const purchaseId = this.getAttribute('data-purchase-id');
+                    const data = purchaseData[purchaseId];
+                    
+                    // Set form values
+                    document.getElementById('editPurchaseId').value = data.id;
+                    document.getElementById('editTransactionId').value = data.transactionId;
+                    document.getElementById('editUserEmail').value = data.userEmail;
+                    document.getElementById('editUserName').value = data.userName;
+                    document.getElementById('editStatus').value = data.status || 'pending';
+                    
+                    // Set price and coupon values
+                    document.getElementById('editOriginalPrice').value = data.originalPrice !== 'N/A' ? data.originalPrice : '';
+                    document.getElementById('editCouponCode').value = data.couponCode || '';
+                    document.getElementById('editDiscountAmount').value = data.discountAmount !== '0.00' ? data.discountAmount : '0';
+                    document.getElementById('editFinalPrice').value = data.finalPrice !== 'N/A' ? data.finalPrice : '';
+                    
+                    // Hide the purchase details modal and show the edit modal
+                    const purchaseModal = bootstrap.Modal.getInstance(document.getElementById('purchaseModal' + purchaseId));
+                    purchaseModal.hide();
+                    
+                    // Show the edit modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+                    editModal.show();
+                });
+            });
+            
+            // Handle verify payment button clicks
+            document.querySelectorAll('.verify-payment-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const purchaseId = this.getAttribute('data-purchase-id');
+                    const data = purchaseData[purchaseId];
+                    const priceDisplay = data.couponCode ? 
+                        `₹${data.finalPrice} (Original: ₹${data.originalPrice}, Coupon: ${data.couponCode}, Discount: ₹${data.discountAmount})` : 
+                        `₹${data.finalPrice}`;
+                    
+                    if(confirm(`Verify payment of ${priceDisplay}?`)) {
+                        // In a real implementation, we would use fetch to make an AJAX call to update the status
+                        fetch(`/admin/purchases/${purchaseId}/update-status`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ status: 'verified' })
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert(`Payment of ${priceDisplay} has been verified successfully.`);
+                                // Reload the page to show updated status
+                                window.location.reload();
+                            } else {
+                                alert('Error updating payment status');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error updating payment status: ' + error.message);
+                        });
+                    }
+                });
+            });
+            
+            // Handle mark failed button clicks
+            document.querySelectorAll('.mark-failed-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const purchaseId = this.getAttribute('data-purchase-id');
+                    const data = purchaseData[purchaseId];
+                    const priceDisplay = data.couponCode ? 
+                        `₹${data.finalPrice} (Original: ₹${data.originalPrice}, Coupon: ${data.couponCode}, Discount: ₹${data.discountAmount})` : 
+                        `₹${data.finalPrice}`;
+                    
+                    if(confirm(`Mark payment of ${priceDisplay} as failed?`)) {
+                        // In a real implementation, we would use fetch to make an AJAX call to update the status
+                        fetch(`/admin/purchases/${purchaseId}/update-status`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ status: 'failed' })
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert(`Payment of ${priceDisplay} has been marked as failed.`);
+                                // Reload the page to show updated status
+                                window.location.reload();
+                            } else {
+                                alert('Error updating payment status');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error updating payment status: ' + error.message);
+                        });
+                    }
+                });
+            });
+            
+            // Add submit handler for the edit form
+            document.getElementById('editTransactionForm').addEventListener('submit', function(e) {
+                // The form will submit normally, but show a confirmation message
+                alert('Transaction updated successfully! The page will reload.');
+            });
+            
+            // Auto-calculate final price when original price or discount changes
+            const editOriginalPrice = document.getElementById('editOriginalPrice');
+            const editDiscountAmount = document.getElementById('editDiscountAmount');
+            const editFinalPrice = document.getElementById('editFinalPrice');
+            
+            function updateFinalPrice() {
+                const originalPrice = parseFloat(editOriginalPrice.value) || 0;
+                const discountAmount = parseFloat(editDiscountAmount.value) || 0;
+                
+                if (originalPrice > 0) {
+                    const finalPrice = Math.max(0, originalPrice - discountAmount).toFixed(2);
+                    editFinalPrice.value = finalPrice;
+                }
+            }
+            
+            editOriginalPrice.addEventListener('input', updateFinalPrice);
+            editDiscountAmount.addEventListener('input', updateFinalPrice);
+        });
+    </script>
+</body>
+</html> 

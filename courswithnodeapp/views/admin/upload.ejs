@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Add Course</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/rich-text-editor.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --info-color: #36b9cc;
+            --dark-color: #2a313b;
+            --light-color: #f8f9fc;
+            --card-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            --border-radius: 0.5rem;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(to bottom, var(--primary-color), #224abe);
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: width 0.3s ease;
+            width: 230px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+            padding-top: 1rem;
+        }
+        
+        .sidebar-header {
+            height: 4.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-brand {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+        }
+        
+        .sidebar-divider {
+            margin: 1rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .nav-item {
+            padding: 0 1rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-icon {
+            margin-right: 0.8rem;
+            font-size: 1rem;
+        }
+        
+        .main-content {
+            margin-left: 230px;
+            padding: 1.5rem;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .topbar {
+            height: 4.375rem;
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .topbar-title {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--dark-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: none;
+        }
+        
+        .dashboard-card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1.5rem;
+            background-color: white;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.3rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+            border-color: #bac8f3;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 250px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .toggle-sidebar {
+                display: block;
+            }
+            
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.3);
+                z-index: 999;
+                display: none;
+            }
+            
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/admin-navbar') %>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin" class="sidebar-brand">
+                <i class="bi bi-speedometer2 me-2"></i>
+                Admin
+            </a>
+        </div>
+        
+        <hr class="sidebar-divider">
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/admin">
+                    <i class="bi bi-house-door nav-icon"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/courses">
+                    <i class="bi bi-book nav-icon"></i>
+                    Courses
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/admin/upload">
+                    <i class="bi bi-cloud-upload nav-icon"></i>
+                    Upload Course
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/purchases">
+                    <i class="bi bi-cart-check nav-icon"></i>
+                    Purchases
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/payment-settings">
+                    <i class="bi bi-credit-card nav-icon"></i>
+                    Payment Settings
+                </a>
+            </li>
+            
+            <hr class="sidebar-divider">
+            
+            <li class="nav-item">
+                <a class="nav-link" href="/">
+                    <i class="bi bi-globe nav-icon"></i>
+                    View Website
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <!-- Sidebar backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Topbar -->
+        <div class="topbar mb-4">
+            <button class="toggle-sidebar" id="toggleSidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <h1 class="topbar-title">Add New Course</h1>
+            <div>
+                <a href="/admin/courses" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Courses
+                </a>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <% if (message) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <%= message %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+                
+                <% if (error) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <%= error %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+
+                <form action="/admin/upload" method="POST">
+                    <div class="mb-3">
+                        <label for="heading" class="form-label">Course Title</label>
+                        <input type="text" class="form-control" id="heading" name="heading" required>
+                    </div>
+
+                            <div class="mb-3">
+                        <label for="description" class="form-label">Course Description</label>
+                        <div id="rich-text-container" class="rich-text-container">
+                            <textarea id="description" name="description" style="display: none;"></textarea>
+                        </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                        <label for="price" class="form-label">Price (₹)</label>
+                        <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                        <label for="imageUrl" class="form-label">Course Image URL</label>
+                        <input type="url" class="form-control" id="imageUrl" name="imageUrl" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Add Course</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/rich-text-editor.js"></script>
+    <script>
+        // Initialize rich text editor
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = new RichTextEditor('rich-text-container', 'description');
+            
+            // Sidebar toggle functionality
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            const toggleSidebarBtn = document.getElementById('toggleSidebar');
+            
+            toggleSidebarBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                sidebarBackdrop.classList.toggle('show');
+            });
+            
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarBackdrop.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+</html> 
