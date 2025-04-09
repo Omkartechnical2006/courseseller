@@ -2,8 +2,54 @@
 <script>
     // Toggle sidebar
     document.getElementById('toggleSidebar').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('collapsed');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        sidebar.classList.toggle('collapsed');
+        
+        // Toggle overlay on mobile
+        if (window.innerWidth <= 768) {
+            overlay.classList.toggle('active');
+        }
     });
+    
+    // Close sidebar with close button
+    if (document.getElementById('closeSidebar')) {
+        document.getElementById('closeSidebar').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('collapsed');
+            overlay.classList.remove('active');
+        });
+    }
+    
+    // Close sidebar when clicking overlay
+    document.getElementById('sidebarOverlay').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.remove('collapsed');
+        this.classList.remove('active');
+    });
+    
+    // Adjust sidebar state on window resize
+    window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (window.innerWidth > 768) {
+            // On desktop, sidebar is visible by default
+            if (!sidebar.classList.contains('collapsed')) {
+                overlay.classList.remove('active');
+            }
+        } else {
+            // On mobile, sidebar is hidden by default
+            if (sidebar.classList.contains('collapsed')) {
+                overlay.classList.add('active');
+            }
+        }
+    });
+    
+    // Initialize sidebar state based on screen size
+    window.dispatchEvent(new Event('resize'));
 </script>
 </body>
 </html> 

@@ -9,6 +9,7 @@
     <style>
         body {
             background-color: #f8f9fc;
+            overflow-x: hidden;
         }
         .sidebar {
             height: 100vh;
@@ -20,6 +21,7 @@
             padding-top: 1rem;
             z-index: 1;
             transition: all 0.3s;
+            overflow-y: auto;
         }
         .sidebar.collapsed {
             margin-left: -250px;
@@ -53,9 +55,29 @@
             border: none;
             font-size: 1.5rem;
             color: #4e73df;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        .toggle-sidebar:hover {
+            background-color: rgba(78, 115, 223, 0.1);
+        }
+        .btn-close-sidebar {
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-close-sidebar:hover {
+            transform: scale(1.1);
         }
         main {
             transition: all 0.3s;
+            padding: 1rem;
         }
         .topbar-title {
             margin-bottom: 0;
@@ -70,12 +92,77 @@
             background-color: #f8f9fc;
             border-bottom: 1px solid #e3e6f0;
         }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+                height: 100vh;
+                position: fixed;
+                z-index: 1050;
+                left: -250px;
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            }
+            .sidebar.collapsed {
+                margin-left: 0;
+                left: 0;
+            }
+            .topbar {
+                flex-wrap: wrap;
+                padding: 0.75rem;
+            }
+            .topbar-title {
+                font-size: 1.25rem;
+                order: 2;
+                width: 100%;
+                margin-top: 10px;
+                text-align: center;
+            }
+            main {
+                margin-left: 0 !important;
+                width: 100%;
+                padding: 0.5rem;
+            }
+            .card {
+                margin-bottom: 1rem;
+            }
+            .toggle-sidebar {
+                order: 1;
+                position: relative;
+                z-index: 1051;
+            }
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1040;
+                transition: opacity 0.3s;
+            }
+            .sidebar-overlay.active {
+                display: block;
+            }
+            .container-fluid {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="wrapper">
         <!-- Admin navbar will be inserted here -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="topbar mb-4">
+            <button class="toggle-sidebar" id="toggleSidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <h1 class="topbar-title">Admin Dashboard</h1>
+        </div>
     </div>
 </body>
-</html> 
+</html>
 <!-- using in admin credentials.ejs -->
